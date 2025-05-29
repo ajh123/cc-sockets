@@ -31,17 +31,19 @@ function runEventLoop(): never {
       const args = ev.slice(2);
       if (syscall === "send_packet") {
         const [dest_ip, protocol, payload] = args;
-        if (ipv4.sendPacket(dest_ip, protocol, payload)) {
-          os.queueEvent("network_response", true);
+        const err = ipv4.sendPacket(dest_ip, protocol, payload)
+        if (err[0]) {
+          os.queueEvent("network_response", true, err[1]);
         } else {
-          os.queueEvent("network_response", false);
+          os.queueEvent("network_response", false, err[1]);
         }
       } else if (syscall === "send_udp") {
         const [dest_ip, port, data] = args;
-        if (udp.sendData(dest_ip, port, data)) {
-          os.queueEvent("network_response", true);
+        const err = udp.sendData(dest_ip, port, data);
+        if (err[0]) {
+          os.queueEvent("network_response", true, err[1]);
         } else {
-          os.queueEvent("network_response", false);
+          os.queueEvent("network_response", false, err[1]);
         }
       } else if (syscall === "register_udp_handler") {
         const [port, handler] = args;

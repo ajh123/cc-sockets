@@ -8,6 +8,7 @@ local cc_socket = {}
 --- @param protocol number The protocol to use (e.g., "tcp", "udp").
 --- @param payload string The data to send as a string.
 --- @return boolean result true if the packet was sent successfully, false otherwise.
+--- @return string error An error message if the packet could not be sent.
 function cc_socket.send_packet(dest_ip, protocol, payload)
   if type(dest_ip) ~= "string" or type(protocol) ~= "number" or type(payload) ~= "string" then
     error("Invalid arguments: dest_ip must be a string, protocol must be a number, and payload must be a string.")
@@ -15,7 +16,7 @@ function cc_socket.send_packet(dest_ip, protocol, payload)
   local event = { "network_syscall", "send_packet", dest_ip, protocol, payload }
   os.queueEvent(table.unpack(event))
   local ev = { os.pullEvent("network_response") }
-  return ev[1] == true
+  return ev[1], ev[2]
 end
 
 --- Sends a UDP packet to a specified IP address and port.
@@ -23,6 +24,7 @@ end
 --- @param port number The destination port as a number.
 --- @param data string The data to send as a string.
 --- @return boolean result true if the UDP packet was sent successfully, false otherwise.
+--- @return string error An error message if the packet could not be sent.
 function cc_socket.send_udp(dest_ip, port, data)
   if type(dest_ip) ~= "string" or type(port) ~= "number" or type(data) ~= "string" then
     error("Invalid arguments: dest_ip must be a string, port must be a number, and data must be a string.")
@@ -30,7 +32,7 @@ function cc_socket.send_udp(dest_ip, port, data)
   local event = { "network_syscall", "send_udp", dest_ip, port, data }
   os.queueEvent(table.unpack(event))
   local ev = { os.pullEvent("network_response") }
-  return ev[1] == true
+  return ev[1], ev[2]
 end
 
 --- Registers a handler for incoming UDP packets on a specified port.

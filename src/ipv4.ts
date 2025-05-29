@@ -96,17 +96,15 @@ export function handleIPv4Packet(raw: string, iface: datalink.ModemInterface) {
   // else silently drop or extend with e.g. icmp.handle(pkt)
 }
 
-export function sendPacket(dest_ip: string, protocol: number, payload: unknown): boolean {
+export function sendPacket(dest_ip: string, protocol: number, payload: unknown): LuaMultiReturn<[boolean, string]> {
   const route = determineRoute(dest_ip);
   if (!route) {
-    print("Network Error: No route to", dest_ip);
-    return false;
+    return [false, "No route to destination"] as LuaMultiReturn<[boolean, string]>;
   }
 
   const iface = datalink.getInterface(route.interface_name);
   if (!iface || !iface.ip_address) {
-    print("Network Error: Invalid interface for route to", dest_ip);
-    return false;
+    return [false, "Invalid interface for route"] as LuaMultiReturn<[boolean, string]>;
   }
 
   const next_hop = route.next_hop_ip ?? dest_ip;
@@ -133,13 +131,13 @@ export function sendPacket(dest_ip: string, protocol: number, payload: unknown):
   if (!next_hop_mac) {
     arp.storePendingPacket(packet, iface);
     arp.sendARPRequest(next_hop, iface);
-    return false;
+    return [false, "Next hop MAC address not resolved"] as LuaMultiReturn<[boolean, string]>;
   }
 
   const raw_packet = textutils.serialiseJSON(packet);
   datalink.sendFrame(iface, next_hop_mac, datalink.ETHERTYPE_IPV4, raw_packet);
 
-  return true;
+  return [true, "Packet sent successfully"] as LuaMultiReturn<[boolean, string]>;
 }
 
 export function forwardPacket(receivingInterface: datalink.ModemInterface, packet: IPv4Packet): void {

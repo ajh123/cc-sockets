@@ -2,7 +2,7 @@ import { IPv4Packet } from "./ipv4";
 
 type TransportHandler = (src_ip: string, data: unknown) => void;
 
-let sendPacketFunc: ((dest_ip: string, protocol: number, payload: string) => boolean) | null = null;
+let sendPacketFunc: ((dest_ip: string, protocol: number, payload: string) => LuaMultiReturn<[boolean, string]>) | null = null;
 const handlers = new Map<number, TransportHandler>();
 const UDP_PROTOCOL = 17;
 
@@ -28,14 +28,14 @@ export function handleNetworkPacket(packet: IPv4Packet) {
   if (h) h(packet.src_ip, json.data);
 }
 
-export function sendData(dest_ip: string, port: number, data: unknown): boolean {
-  if (!sendPacketFunc) return false;
+export function sendData(dest_ip: string, port: number, data: unknown): LuaMultiReturn<[boolean, string]> {
+  if (!sendPacketFunc) return [false, "No send packet function set"] as LuaMultiReturn<[boolean, string]>;
   const tp = textutils.serialiseJSON({ port, data });
   return sendPacketFunc(dest_ip, UDP_PROTOCOL, tp);
 }
 
 export function setSendPacketFunction(
-  fn: (dest_ip: string, protocol: number, payload: string) => boolean
+  fn: (dest_ip: string, protocol: number, payload: string) => LuaMultiReturn<[boolean, string]>
 ) {
   sendPacketFunc = fn;
 }
