@@ -16,7 +16,7 @@ function cc_socket.send_packet(dest_ip, protocol, payload)
   local event = { "network_syscall", "send_packet", dest_ip, protocol, payload }
   os.queueEvent(table.unpack(event))
   local ev = { os.pullEvent("network_response") }
-  return ev[1], ev[2]
+  return ev[2], ev[3]
 end
 
 --- Sends a UDP packet to a specified IP address and port.
@@ -32,7 +32,7 @@ function cc_socket.send_udp(dest_ip, port, data)
   local event = { "network_syscall", "send_udp", dest_ip, port, data }
   os.queueEvent(table.unpack(event))
   local ev = { os.pullEvent("network_response") }
-  return ev[1], ev[2]
+  return ev[2], ev[3]
 end
 
 --- Registers a handler for incoming UDP packets on a specified port.

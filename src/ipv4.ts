@@ -226,7 +226,7 @@ export function isIPInNetwork(ip: string, network_addr: string, prefix_length: n
 
   const ipInt = toInt(toOctets(ip));
   const netInt = toInt(toOctets(network_addr));
-  const mask = ~(0xffffffff << (32 - prefix_length));
+  const mask = bit32.bnot(0xffffffff << (32 - prefix_length));
 
   return (ipInt & mask) === (netInt & mask);
 }
@@ -250,7 +250,7 @@ export function subnetToCIDR(subnet: string): number {
   for (const octetStr of subnet.split(".")) {
     let b = Number(octetStr);
     for (let i = 7; i >= 0; i--) {
-      if ((b & (1 << i)) !== 0) {
+      if (bit32.band(b, bit32.lshift(1, i)) !== 0) {
         count++;
       } else {
         break;
@@ -277,7 +277,7 @@ export function isBroadcastAddress(ip: string, subnet: string | undefined): bool
   const mo = toOctets(subnet);
 
   for (let i = 0; i < 4; i++) {
-    if (ipo[i] !== (neto[i] | (~mo[i] & 0xff))) {
+    if (ipo[i] !== (neto[i] | (bit32.bnot(mo[i]) & 0xff))) {
       return false;
     }
   }
