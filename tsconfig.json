@@ -10,7 +10,7 @@
     "tstl": {
         "luaTarget": "CC-5.2",
         "luaLibImport": "inline",
-        "luaBundle": "./build/cc-sockets.lua",
+        "luaBundle": "./build/cc-sockets-daemon.lua",
         "luaBundleEntry": "./src/main.ts"
     },
     "include": [

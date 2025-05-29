@@ -1,8 +1,9 @@
 import * as datalink from "./datalink";
 import * as ipv4 from "./ipv4";
 import * as arp from "./arp";
+import * as udp from "./udp";
 
-export function init() {
+function init() {
   datalink.init();
 
   // Whenever a frame arrives, pass it straight into the IPv4 layer
@@ -15,13 +16,53 @@ export function init() {
   ipv4.registerProtocolHandler(datalink.ETHERTYPE_IPV4, ipv4.handleIPv4Packet);
 }
 
-export function runEventLoop(): never {
+function runEventLoop(): never {
   while (true) {
-    // os.pullEvent returns [ eventName, ...args ]
-    const ev = { ...os.pullEvent("modem_message") } as any[];
+    const ev = os.pullEvent();
     // [0] = "modem_message", [1] = side, [5] = raw JSON frame
-    const side = ev[1];
-    const raw = ev[5];
-    datalink.handleModemMessage(side, raw);
+    if (ev[0] === "modem_message") {
+      const side = ev[1];
+      const raw = ev[5];
+      datalink.handleModemMessage(side, raw);
+    }
+    // [0] = "network_syscall", [1] = syscall, [2] = args...
+    else if (ev[0] === "network_syscall") {
+      const syscall = ev[1];
+      const args = ev.slice(2);
+      if (syscall === "send_packet") {
+        const [dest_ip, protocol, payload] = args;
+        if (ipv4.sendPacket(dest_ip, protocol, payload)) {
+          os.queueEvent("network_response", true);
+        } else {
+          os.queueEvent("network_response", false);
+        }
+      } else if (syscall === "send_udp") {
+        const [dest_ip, port, data] = args;
+        if (udp.sendData(dest_ip, port, data)) {
+          os.queueEvent("network_response", true);
+        } else {
+          os.queueEvent("network_response", false);
+        }
+      } else if (syscall === "register_udp_handler") {
+        const [port, handler] = args;
+        if (udp.registerHandler(port, handler)) {
+          os.queueEvent("network_response", true);
+        } else {
+          os.queueEvent("network_response", false);
+        }
+      } else if (syscall === "unregister_udp_handler") {
+        const [port] = args;
+        if (udp.unregisterHandler(port)) {
+          os.queueEvent("network_response", true);
+        } else {
+          os.queueEvent("network_response", false);
+        }
+      } else {
+        os.queueEvent("network_error", `Unknown syscall: ${syscall}`);
+      }
+    }
   }
 }
+
+init();
+runEventLoop();

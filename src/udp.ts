@@ -6,8 +6,16 @@ let sendPacketFunc: ((dest_ip: string, protocol: number, payload: string) => boo
 const handlers = new Map<number, TransportHandler>();
 const UDP_PROTOCOL = 17;
 
-export function registerHandler(port: number, handler: TransportHandler) {
+export function registerHandler(port: number, handler: TransportHandler): boolean {
+  if (handlers.has(port)) {
+    return false;
+  }
   handlers.set(port, handler);
+  return true;
+}
+
+export function unregisterHandler(port: number): boolean {
+  return handlers.delete(port);
 }
 
 export function handleNetworkPacket(packet: IPv4Packet) {
