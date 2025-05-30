@@ -29,8 +29,8 @@ export type ProtocolHandler = (
   receivingInterface: datalink.ModemInterface
 ) => void;
 
-const routingTable = new Map<string, Route>();
-const etherTypeHandlers = new Map<number, ProtocolHandler>();
+const routingTable = new LuaTable<string, Route>();
+const etherTypeHandlers = new LuaTable<number, ProtocolHandler>();
 
 export function registerProtocolHandler(ethertype: number, handler: ProtocolHandler) {
   etherTypeHandlers.set(ethertype, handler);
@@ -61,6 +61,10 @@ export function addRoute(destination: string, next_hop_ip: string | null, interf
 export function removeRoute(destination: string): void {
   routingTable.delete(destination);
   print("Network: Removed route", destination);
+}
+
+export function getRoutingTable(): LuaTable<string, Route> {
+  return routingTable;  // no cloning
 }
 
 export function handleDataLinkFrame(
@@ -182,7 +186,7 @@ export function determineRoute(dest_ip: string): Route | undefined {
   let best_route: Route | undefined;
   let best_prefix = -1;
 
-  for (const [dest, route] of routingTable.entries()) {
+  for (const [dest, route] of routingTable) {
     // split "network/prefix" into ["network","prefix"]
     const parts = dest.split("/");
     if (parts.length === 0) continue;

@@ -26,7 +26,7 @@ export const ETHERTYPE_ARP = 0x0806;
 export function init() {
     const peripherals = peripheral.getNames();
     for (const name of peripherals) {
-        if ('modem' in peripheral.getType(name)) {
+        if (peripheral.hasType(name, "modem")) {
             const modem_peripheral = peripheral.wrap(name) as ModemPeripheral;
 
             interfaces.push({
@@ -42,6 +42,15 @@ export function init() {
 
 export function getInterface(name: string): ModemInterface | undefined {
     return interfaces.find(iface => iface.name === name);
+}
+
+function replaceInterface(name: string, iface: ModemInterface): void {
+    const index = interfaces.findIndex(i => i.name === name);
+    if (index !== -1) {
+        interfaces[index] = iface;
+    } else {
+        interfaces.push(iface);
+    }
 }
 
 export function getInterfaces(): ModemInterface[] {
@@ -78,6 +87,9 @@ export function configureInterface(
 
     iface.ip_address = ip_address;
     iface.subnet_mask = subnet_mask;
+
+    replaceInterface(name, iface);
+    print(`Datalink: Configured interface ${name} with IP ${ip_address} and subnet mask ${subnet_mask}`);
 
     return iface;
 }
